@@ -52,8 +52,10 @@ header_match_to_scrim = {
     'hero_name':'Hero',
     'ultimate_percent':'UltimateCharge',
     'is_alive':'IsAlive',
-    'health':'Health'
-
+    'health':'Health', 
+    'map_winner':'MapWinner',
+    'match_winner':'MatchWinner',
+    'match_loser':'MatchLoser'
 }
 
 ssg_dict = {

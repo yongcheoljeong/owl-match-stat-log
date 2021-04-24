@@ -172,13 +172,31 @@ class MatchLog():
         
         merge2 = join_merge1_and_playerstatus(merge1)
 
+        # slice time to see only in-game data
         merge3 = pd.DataFrame()
         for idx in self.df_roundstart.index:
             ingamedata = merge2.set_index('time')[self.df_roundstart.loc[idx, 'time_start']:self.df_roundstart.loc[idx, 'time_end']]
             ingamedata = ingamedata.reset_index()
             merge3 = pd.concat([merge3, ingamedata], ignore_index=True)
 
-        merge_final = merge3.rename(columns=Match_Scrim_Trans_Info.header_match_to_scrim)
+        # merge match result info
+        match_result_info = self.df_gameresult[['esports_match_id', 'num_map', 'map_name', 'map_type', 'map_winner']]
+        score_info = match_result_info['map_winner'].value_counts()
+        match_winner = score_info[score_info == score_info.max()].index[0]
+        match_loser = [x for x in merge3['team_name'].unique() if x != match_winner][0]
+        winner_match_score = score_info[match_winner]
+        loser_match_score = match_result_info['map_winner'].str.count(match_loser).sum()
+        match_result_info = match_result_info.copy()
+        match_result_info['match_winner'] = match_winner 
+        match_result_info['match_loser'] = match_loser 
+        match_result_info['winner_match_score'] = winner_match_score 
+        match_result_info['loser_match_score'] = loser_match_score 
+        match_result_info['esports_match_id'] = match_result_info['esports_match_id'].astype(int)
+        match_result_info['num_map'] = match_result_info['num_map'].astype(int)
+
+        merge4 = pd.merge(merge3, match_result_info, how='inner')
+
+        merge_final = merge4.rename(columns=Match_Scrim_Trans_Info.header_match_to_scrim)
 
         self.df_input = merge_final
 
