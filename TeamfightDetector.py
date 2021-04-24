@@ -68,6 +68,10 @@ class TeamfightDetector():
                     (20210325_02, Dorado, 0, TF#4) 처럼 일방적으로 TAL 쪽에서 FB 기록했지만 리스폰이 돌면서 한타 마지막에만 순간적으로 RCP가 NYE 쪽으로 기운 경우
 
             이를 해결하기 위해 Teamfight 후반부로 갈수록 비중을 높여서 TF_RCP_sum 을 계산 (TF_RCP_weighted_sum). 이게 높은 쪽이 winner.
+
+            20210424: MatchLog는 Scrim과 다르게 2초에 한번씩 데이터가 찍혀 resolution이 굉장히 낮기 때문에 Teamfight에 대한 많은 내용이 밀려서 반영되는 경우가 많음.
+            따라서 시작조건, 끝조건 뿐만 아니라 Winner 조건도 Scrim과는 조금 다르게 잡아야 할 듯.
+
             '''
             df_RCP = TF_rolling_tmp.loc[TF_time_range.loc[idx, 'TF_start_time']:TF_time_range.loc[idx, 'TF_end_time'], 'RCP']
             num_data = len(df_RCP)
@@ -189,8 +193,8 @@ def TF_detector(df_rolling):
     TF_start_time_stamps = []
     TF_end_time_stamps = []
 
-    HDD_threshold = 200
-    HDD_lull_cut = 300
+    HDD_threshold = 150
+    HDD_lull_cut = 200
     FB_threshold = 0
     possible_time_variance = pd.Timedelta(2, unit='s')
     no_FB_duration = pd.Timedelta(10, unit='s')

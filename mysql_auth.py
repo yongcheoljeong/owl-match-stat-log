@@ -16,6 +16,15 @@ NYXLDB_ESD_GameInfo = {
     'port' : 3306
 }
 
+NYXLDB_ESD_FinalStat = {
+    'hostname' : "localhost",
+    'username' : "root",
+    'pwd' : "gpdlzjadh",
+    'dbname' : "esd_finalstat",
+    'charset' : "utf8",
+    'port' : 3306
+}
+
 NYXLDB_ESD_RoundStart = {
     'hostname' : "localhost",
     'username' : "root",

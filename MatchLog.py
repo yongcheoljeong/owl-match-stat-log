@@ -114,6 +114,12 @@ class MatchLog():
             df_phs.drop(columns='stat_name', inplace=True)
             df_phs_pivot = pd.pivot_table(df_phs, index=['time', 'team_name', 'player_name', 'hero_name'], columns=['ssg'], aggfunc=['mean'])
             df_phs_pivot.columns = df_phs_pivot.columns.droplevel([0, 1]) # droplevel: ['mean', 'amount']
+            col_not_in_phs_pivot = list(set(list(Match_Scrim_Trans_Info.ssg_dict.values())) - set(df_phs_pivot.columns))
+
+            if len(col_not_in_phs_pivot) > 0: # EnvironmentalKills 처럼 경기에 하나도 찍히지 않아서 column이 생기지 않는 경우 에러 방지하기 위해 해당 column 임의로 만들고 data 0으로 채움
+                for col in col_not_in_phs_pivot:
+                    df_phs_pivot[col] = 0
+
             df_phs_pivot.reset_index(inplace=True)
             
             # transform ssg to stat_name
@@ -133,38 +139,6 @@ class MatchLog():
 
 
     def set_df_input(self):
-
-        # def join_playerstatus_and_phs():
-        #     self.df_playerstatus = self.df_playerstatus.sort_values(by='time')
-        #     self.df_phs = self.df_phs.sort_values(by='time')
-        #     merge1 = pd.merge_asof(self.df_playerstatus, self.df_phs, on='time', by=['team_name', 'player_name', 'hero_name'], tolerance=pd.Timedelta('3s'))  
-
-        #     return merge1 
-        
-        # merge1 = join_playerstatus_and_phs()
-
-        # # join dataframes (playerstatus + phs + gameinfo)
-        # def join_merge1_and_gameinfo(merge1):
-        #     '''
-        #     GameInfo: round 바껴도 round_name이 바뀌지 않는 문제가 있음. round 끝나서 점수 오르고 num_round 바껴도 느려지는 마지막 그 시간에 캐릭터들 위치한 곳이 이전 맵이라서 이런 현상 있는 듯.
-        #     '''
-        #     self.df_gameinfo = self.df_gameinfo.sort_values(by='time')
-        #     merge2 = pd.merge_asof(merge1, self.df_gameinfo, on='time', by=['esports_match_id', 'num_map', 'map_name', 'map_type'], tolerance=pd.Timedelta('2s'))
-
-        #     num_control_maps = self.df_gameinfo[(self.df_gameinfo['map_type'] == 'CONTROL')]['num_map'].unique()
-
-        #     for control_map in num_control_maps:
-        #         num_rounds = self.df_gameinfo[self.df_gameinfo['num_map'] == control_map]['num_round'].unique()
-        #         for num_round in num_rounds:
-        #             dropping_index = merge2[(merge2['num_map'] == control_map) & (merge2['map_type'] == 'CONTROL') & (merge2['num_round'] == num_round) & (merge2['round_name'] != self.df_gameinfo[(self.df_gameinfo['num_map'] == control_map) & (self.df_gameinfo['map_type'] == 'CONTROL') & (self.df_gameinfo['num_round'] == num_round) & (self.df_gameinfo['context'] == 'ROUND_END')]['round_name'].unique()[0])].index
-        #             merge2.drop(dropping_index, inplace=True) # drop 'num_round'와 round_name 일치하지 않는 row
-        #             merge2.loc[(merge2['num_map'] == control_map) & (merge2['map_type'] == 'CONTROL') & (merge2['num_round'] == num_round), 'round_name'] = self.df_gameinfo[(self.df_gameinfo['num_map'] == control_map) & (self.df_gameinfo['map_type'] == 'CONTROL') & (self.df_gameinfo['num_round'] == num_round) & (self.df_gameinfo['context'] == 'ROUND_END')]['round_name'].unique()[0]
-
-        #     merge2 = merge2.dropna(subset=['num_round']) # num_round == Nan 일 때 row drop
-
-        #     return merge2
-
-        # merge2 = join_merge1_and_gameinfo(merge1) 
 
         def join_phs_and_gameinfo():
             self.df_phs = self.df_phs.sort_values(by='time')
@@ -316,47 +290,46 @@ class MatchLog():
     def get_df_FinalStat(self):
         return self.df_FinalStat
     
+    def export_to_db(self):
+        df_FinalStat = self.get_df_FinalStat()
+        login_info = mysql_auth.NYXLDB_ESD_FinalStat
+        sql_con = MySQLConnection(input_df=df_FinalStat, login_info=login_info)
+        sql_con.export_to_db(table_name=f'match_{self.match_id}', if_exists='replace') # export
+        print(f'FinalStat Exported: match_{self.match_id}')
+    
     def update_FinalStat_to_sql(self):
-        pass
-        # def get_filelist_all(): 
-        #     # set path
-        #     filepath = r'G:/공유 드라이브/NYXL Scrim Log/Csv/'
-        #     filelist = os.listdir(filepath)
-        #     csv_filelist = [x for x in filelist if x.endswith('.csv')]
+        def get_all_matchlist(): 
+            gameinfo_list = MySQLConnection(login_info=mysql_auth.NYXLDB_ESD_GameInfo).get_table_names()
+            playerstatus_list = MySQLConnection(login_info=mysql_auth.NYXLDB_ESD_PlayerStatus).get_table_names()
+            phs_list = MySQLConnection(login_info=mysql_auth.NYXLDB_ESD_PHS).get_table_names()
+            gameresult_list = MySQLConnection(login_info=mysql_auth.NYXLDB_ESD_GameResult).get_table_names()
+            roundstart_list = MySQLConnection(login_info=mysql_auth.NYXLDB_ESD_RoundStart).get_table_names()
 
-        #     return csv_filelist
+            all_matchlist = list(set(gameinfo_list) & set(playerstatus_list) & set(phs_list) & set(gameresult_list) & set(roundstart_list))
+            all_matchlist2 = []
+
+            for match_id in all_matchlist:
+                match_id2 = match_id.split('_')[1]
+                all_matchlist2.append(match_id2)
+
+            return all_matchlist2
             
-        # def get_filelist_updated():
-        #     filepath = r'G:/공유 드라이브/NYXL Scrim Log/Csv/'
-        #     updated_csv = 'FilesUpdated_FinalStat_MySQL.txt'
-        #     f = open(os.path.join(filepath, updated_csv), 'r+')
-        #     lines = f.readlines()
-        #     updated_filelist = []
+        def get_updated_matchlist():
+            updated_match_list = MySQLConnection(login_info=mysql_auth.NYXLDB_ESD_FinalStat).get_table_names()
+            updated_match_list2 = []
 
-        #     for line in lines:
-        #         updated_filelist.append(line.replace('\n', ''))
+            for match_id in updated_match_list:
+                match_id2 = match_id.split('_')[1]
+                updated_match_list2.append(match_id2)
             
-        #     f.close()
-            
-        #     return updated_filelist
+            return updated_match_list2
+        
+        all_matchlist = get_all_matchlist()
+        updated_matchlist = get_updated_matchlist()
+        matchlist_to_update = list(set(all_matchlist) - set(updated_matchlist))
 
-        # csv_filelist = get_filelist_all() # all filelist
-        # updated_filelist = get_filelist_updated() # updated filelist
-
-        # # sort files to be updated
-        # csv_filelist_to_update = list(set(csv_filelist) - set(updated_filelist))
-        # csv_filelist_to_update.sort()
-
-        # # export and write
-        # filepath = r'G:/공유 드라이브/NYXL Scrim Log/Csv/'
-        # updated_csv = 'FilesUpdated_FinalStat_MySQL.txt'
-        # f = open(os.path.join(filepath, updated_csv), 'a')
-        # for filename in csv_filelist_to_update:
-        #     scrimlog = ScrimLog(filename)
-        #     df_sql = MySQLConnection(input_df=scrimlog.df_FinalStat.reset_index(), dbname='scrim_finalstat') # reset_index to export to mysql db
-        #     table_name = scrimlog.match_id.split('.csv')[0] # drop '.csv' as a table_name
-        #     df_sql.export_to_db(table_name=table_name, if_exists='replace')
-
-        #     f.write(filename+'\n')
-        #     print(f'File Exported to {df_sql.dbname}: {filename}')
-        # f.close()
+        for match_id in matchlist_to_update:
+            matchlog = MatchLog(match_id=match_id)
+            df_sql = MySQLConnection(input_df=matchlog.df_FinalStat.reset_index(), login_info=mysql_auth.NYXLDB_ESD_FinalStat)
+            table_name = f'match_{matchlog.match_id}'
+            df_sql.export_to_db(table_name=table_name, if_exists='replace')
