@@ -333,3 +333,5 @@ class MatchLog():
             df_sql = MySQLConnection(input_df=matchlog.df_FinalStat.reset_index(), login_info=mysql_auth.NYXLDB_ESD_FinalStat)
             table_name = f'match_{matchlog.match_id}'
             df_sql.export_to_db(table_name=table_name, if_exists='replace')
+
+            print(f'FinalStat Exported: {table_name}')
