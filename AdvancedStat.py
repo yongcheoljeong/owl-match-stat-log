@@ -256,17 +256,17 @@ class DIv2(AdvancedStat):
         df_stat = df_init.groupby(by=self.idx_col).max()
         df_stat['TF_RCP_sum/s'] = df_stat['TF_RCP_sum'].div(df_stat['TF_duration'])
 
-        def DominanceIndex(X): # inverse of Cv
-            DI = X.mean()['TF_RCP_sum/s'].div(X.std()['TF_RCP_sum/s'])
+        def DominanceIndex(X):
+            DI = X.mean()['TF_RCP_sum/s'] #.div(X.std()['TF_RCP_sum/s']) # TF가 한 번 뿐이거나 혹시라도 하나도 없을 경우 DI가 null 이 되므로 Cv 말고 그냥 mean으로 계산
             return DI
         
-        df_stat['DominanceIndex'] = DominanceIndex(df_stat.groupby(['MatchId', 'num_map', 'Map']))
+        df_stat['DominanceIndex'] = DominanceIndex(df_stat.groupby(['MatchId', 'num_map', 'Map', 'Section']))
         
         return df_stat
     
     def merge_df_result(self):
         df_stat = self.define_df_stat()
-        df_stat = df_stat.reset_index().set_index(['MatchId', 'num_map', 'Map'])
+        df_stat = df_stat.reset_index().set_index(['MatchId', 'num_map', 'Map', 'Section'])
         df_stat = df_stat['DominanceIndex']
         df_result = pd.merge(self.input_df, df_stat, how='outer', left_index=True, right_index=True)
 
