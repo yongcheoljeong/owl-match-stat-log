@@ -41,7 +41,7 @@ class RCPv1(AdvancedStat):
     def ready_df_init(self):
         input_df = self.input_df.reset_index()
         
-        requirement_col = ['NumAlive', 'team_one_name', 'team_two_name']
+        requirement_col = ['NumAlive', 'MatchWinner']
         ready_col = self.idx_col + requirement_col
         df_init = input_df[ready_col]
 
@@ -57,8 +57,8 @@ class RCPv1(AdvancedStat):
             return RCP
 
         # team_names
-        team_one_name = df_init['team_one_name'][0]
-        team_two_name = df_init['team_two_name'][0]
+        team_one_name = df_init['MatchWinner'][0] # set MatchWinner as a team_one_name
+        team_two_name = [x for x in df_init['Team'].unique() if x != team_one_name][0]
 
         # team_one_NumAlive
         team_one_NumAlive = df_init[df_init['Team'] == team_one_name]

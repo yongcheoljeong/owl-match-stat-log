@@ -308,14 +308,14 @@ class MatchLog():
     def get_df_FinalStat(self):
         return self.df_FinalStat
     
-    def export_to_db(self):
+    def export_to_db(self, if_exists='replace'):
         df_FinalStat = self.get_df_FinalStat()
         login_info = mysql_auth.NYXLDB_ESD_FinalStat
         sql_con = MySQLConnection(input_df=df_FinalStat, login_info=login_info)
-        sql_con.export_to_db(table_name=f'match_{self.match_id}', if_exists='replace') # export
+        sql_con.export_to_db(table_name=f'match_{self.match_id}', if_exists=if_exists) # export
         print(f'FinalStat Exported: match_{self.match_id}')
     
-    def update_FinalStat_to_sql(self):
+    def update_FinalStat_to_sql(self, if_exists='pass'): # update tables
         def get_all_matchlist(): 
             gameinfo_list = MySQLConnection(login_info=mysql_auth.NYXLDB_ESD_GameInfo).get_table_names()
             playerstatus_list = MySQLConnection(login_info=mysql_auth.NYXLDB_ESD_PlayerStatus).get_table_names()
@@ -342,14 +342,27 @@ class MatchLog():
             
             return updated_match_list2
         
-        all_matchlist = get_all_matchlist()
-        updated_matchlist = get_updated_matchlist()
-        matchlist_to_update = list(set(all_matchlist) - set(updated_matchlist))
+        if if_exists == 'pass':
+            all_matchlist = get_all_matchlist()
+            updated_matchlist = get_updated_matchlist()
+            matchlist_to_update = list(set(all_matchlist) - set(updated_matchlist))
 
-        for match_id in matchlist_to_update:
-            matchlog = MatchLog(match_id=match_id)
-            df_sql = MySQLConnection(input_df=matchlog.df_FinalStat.reset_index(), login_info=mysql_auth.NYXLDB_ESD_FinalStat)
-            table_name = f'match_{matchlog.match_id}'
-            df_sql.export_to_db(table_name=table_name, if_exists='replace')
+            for match_id in matchlist_to_update:
+                matchlog = MatchLog(match_id=match_id)
+                df_sql = MySQLConnection(input_df=matchlog.df_FinalStat.reset_index(), login_info=mysql_auth.NYXLDB_ESD_FinalStat)
+                table_name = f'match_{matchlog.match_id}'
+                df_sql.export_to_db(table_name=table_name, if_exists='replace')
 
-            print(f'FinalStat Exported: {table_name}')
+                print(f'FinalStat Exported: {table_name}')
+        
+        elif if_exists == 'replace':
+            all_matchlist = get_all_matchlist()
+            matchlist_to_update = all_matchlist 
+
+            for match_id in matchlist_to_update:
+                matchlog = MatchLog(match_id=match_id)
+                df_sql = MySQLConnection(input_df=matchlog.df_FinalStat.reset_index(), login_info=mysql_auth.NYXLDB_ESD_FinalStat)
+                table_name = f'match_{matchlog.match_id}'
+                df_sql.export_to_db(table_name=table_name, if_exists='replace')
+
+                print(f'FinalStat Exported: {table_name}')

@@ -19,8 +19,10 @@ class TeamfightDetector():
         '''
         현재 map별로 team_one_name이 계속 바뀌기 때문에 TF_winner를 첫 맵의 team_one_name, team_two_name으로 결정하면 뒤바뀌는 경우 생김. 해결 해야함. 
         '''
-        self.team_one_name = self.input_df['team_one_name'].unique()[0]
-        self.team_two_name = self.input_df['team_two_name'].unique()[0]
+        # self.team_one_name = self.input_df['team_one_name'].unique()[0]
+        # self.team_two_name = self.input_df['team_two_name'].unique()[0]
+        self.team_one_name = self.input_df['MatchWinner'].unique()[0] # set MatchWinner as a team_one_name
+        self.team_two_name = [x for x in self.input_df.index.unique('Team') if x != self.team_one_name][0]
 
         # idx_col
         self.idx_col = ['MatchId', 'num_map', 'Map', 'Section', 'RoundName', 'Timestamp', 'Team', 'Player', 'Hero']
