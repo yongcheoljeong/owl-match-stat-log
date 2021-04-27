@@ -237,35 +237,36 @@ class MatchLog():
 
             dx = df_stats.groupby(level=['MatchId', 'num_map', 'Map', 'map_type', 'Section', 'RoundName', 'Team', 'Player', 'Hero']).diff()
             dx = dx.fillna(0)
-            dt = dx.reset_index('Timestamp').groupby(level=['MatchId', 'num_map', 'Map', 'map_type', 'Section', 'RoundName', 'Team', 'Player', 'Hero'])['Timestamp'].diff().dt.total_seconds().values
-            dxdt = dx.div(dt, axis=0)
-            dxdt = dxdt.fillna(0)
+            # dt = dx.reset_index('Timestamp').groupby(level=['MatchId', 'num_map', 'Map', 'map_type', 'Section', 'RoundName', 'Team', 'Player', 'Hero'])['Timestamp'].diff().dt.total_seconds().values
+            # dxdt = dx.div(dt, axis=0)
+            # dxdt = dxdt.fillna(0)
 
-            def set_dx(dx):
-                '''
-                FinalBlows, Deaths와 같은 Event들은 dxdt가 아니라 dx로 접근해야 정확히 파악 가능
-                column 이름은 정확히 따지자면 '/2s' 혹은 '_dx'가 돼야하지만 AdvancedStat 계산 등 이후 코드들이 '/s'로 통일돼있기 때문에 그냥 진행
-                '''
-                self.dx_stat_list = ['Deaths', 'Eliminations', 'FinalBlows', 'EnvironmentalDeaths', 'EnvironmentalKills', 'ObjectiveKills', 'SoloKills', 'UltimatesEarned', 'UltimatesUsed', 'DefensiveAssists', 'OffensiveAssists']
-                dx = dx[self.dx_stat_list]
+            # def set_dx(dx):
+            #     '''
+            #     FinalBlows, Deaths와 같은 Event들은 dxdt가 아니라 dx로 접근해야 정확히 파악 가능
+            #     column 이름은 정확히 따지자면 '/2s' 혹은 '_dx'가 돼야하지만 AdvancedStat 계산 등 이후 코드들이 '/s'로 통일돼있기 때문에 그냥 진행
+            #     '''
+            #     self.dx_stat_list = ['Deaths', 'Eliminations', 'FinalBlows', 'EnvironmentalDeaths', 'EnvironmentalKills', 'ObjectiveKills', 'SoloKills', 'UltimatesEarned', 'UltimatesUsed', 'DefensiveAssists', 'OffensiveAssists']
+            #     dx = dx[self.dx_stat_list]
 
-                return dx
+            #     return dx
 
-            def set_dxdt(dxdt):
-                '''
-                HeroDamageDealt, HealingDealt와 같은 연속값들은 dxdt로 접근해야 정확히 파악 가능
-                '''
-                self.dxdt_stat_list = ['HeroDamageDealt', 'BarrierDamageDealt', 'HeroDamageTaken', 'HealingDealt', 'HealingReceived']
-                dxdt = dxdt[self.dxdt_stat_list]
+            # def set_dxdt(dxdt):
+            #     '''
+            #     HeroDamageDealt, HealingDealt와 같은 연속값들은 dxdt로 접근해야 정확히 파악 가능
+            #     '''
+            #     self.dxdt_stat_list = ['HeroDamageDealt', 'BarrierDamageDealt', 'HeroDamageTaken', 'HealingDealt', 'HealingReceived']
+            #     dxdt = dxdt[self.dxdt_stat_list]
 
-                return dxdt
+            #     return dxdt
 
-            dx = set_dx(dx)
-            dxdt = set_dxdt(dxdt)
+            # dx = set_dx(dx)
+            # dxdt = set_dxdt(dxdt)
 
-            dxdt_merge = pd.merge(dx, dxdt, how='outer', left_index=True, right_index=True)
+            # dxdt_merge = pd.merge(dx, dxdt, how='outer', left_index=True, right_index=True)
 
-            df_merge = pd.merge(df_input, dxdt_merge, how='left', left_index=True, right_index=True, suffixes=('', '/s'))
+            # df_merge = pd.merge(df_input, dxdt_merge, how='left', left_index=True, right_index=True, suffixes=('', '/s'))
+            df_merge = pd.merge(df_input, dx, how='left', left_index=True, right_index=True, suffixes=('', '/s'))
 
             return df_merge
         

@@ -49,7 +49,7 @@ class TeamfightDetector():
         TF_rolling = pd.DataFrame()
         for section in section_list:
             df_tmp = df_init.xs(section, level='Section', drop_level=False)
-            TF_rolling_tmp = df_tmp.rolling(window=2, min_periods=1).sum() #.fillna(df_tmp) # default window=2 (4 sec) v1.1
+            TF_rolling_tmp = df_tmp.rolling(window=5, min_periods=1).sum() #.fillna(df_tmp) # default window=2 (4 sec) v1.1
             TF_rolling = pd.concat([TF_rolling, TF_rolling_tmp])
 
         TF_rolling = TF_rolling.groupby(by=['MatchId', 'num_map', 'Map', 'Section', 'Timestamp']).sum()[['HeroDamageDealt/s', 'FinalBlows/s']] # For RCP not rolling
@@ -198,8 +198,8 @@ def TF_detector(df_rolling):
     TF_start_time_stamps = []
     TF_end_time_stamps = []
 
-    HDD_threshold = 150
-    HDD_lull_cut = 200
+    HDD_threshold = 500
+    HDD_lull_cut = 600
     FB_threshold = 0
     possible_time_variance = pd.Timedelta(2, unit='s')
     no_FB_duration = pd.Timedelta(10, unit='s')
