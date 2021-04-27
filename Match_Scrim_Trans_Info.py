@@ -58,13 +58,33 @@ header_match_to_scrim = {
     'match_loser':'MatchLoser'
 }
 
+ssg_dict_AllHeroes = {
+    'TimePlayed':38,
+    'HeroDamageDealt':1208,
+    'BarrierDamageDealt':1302,
+    'HeroDamageTaken':1564,
+    'Deaths':41,
+    'Eliminations':37,
+    'FinalBlows':44,
+    'EnvironmentalDeaths':871,
+    'EnvironmentalKills':867,
+    'HealingDealt':465,
+    'ObjectiveKills':806,
+    'SoloKills':46,
+    'UltimatesEarned':1124,
+    'UltimatesUsed':1125,
+    'HealingReceived':1716,
+    'DefensiveAssists':791,
+    'OffensiveAssists':792
+}
+
 ssg_dict = {
     'TimePlayed':33,
     'HeroDamageDealt':1207,
     'BarrierDamageDealt':1301,
     'HeroDamageTaken':401,
     'Deaths':42,
-    'Eliminations':37,
+    'Eliminations':31,
     'FinalBlows':43,
     'EnvironmentalDeaths':869,
     'EnvironmentalKills':866,

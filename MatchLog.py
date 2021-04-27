@@ -225,16 +225,14 @@ class MatchLog():
 
         # dx
         '''
-        현재 스크림 워크샵이 영웅별로 스탯을 누적해주는 것이 아니라 플레이어 별로 스탯을 누적해주기 때문에 선수가 도중에 영웅을 바꿀 경우 diff() 함수에서 문제가 발생 --> `hero_col` 따로 빼서 diff() 구하고 나중에 merge로 해결
+        statlist_cumulated_by_player 에 있는 stat 제외하곤 모두 영웅 기준으로 cumulate. player 기준으로 누적되는 값은 diff_player_stat()에서 영웅 누적으로 바꿔줌.
+        워크샵과 다르게 match ESD는 PHS가 2초에 한번 찍히므로 dx가 대부분 2초 기준으로 누적된 값. RCP 계산의 HDD/s 등 계산할 때 고려해야 함.
         '''
         def diff_stat(df_input=None):
-            '''
-            dt = 0 이 되는 경우가 있는데 2초에 한번씩 찍히는 PHS와 1초에 한번에 찍히는 playerstatus 간 merging 과정에서 phs의 가운데 값이 똑같이 찍혀서 생기는 오류인가?
-            --> PHS + GameInfo merge_asfo 하고 이후에 이걸 playerstatus에 merge_asof 하면 되지 않을까?
-            '''
             diff_stat_list = [stat_name for stat_name, ssg in Match_Scrim_Trans_Info.ssg_dict.items()] # define stat names to diff()
             df_stats = df_input[diff_stat_list]
 
+            df_stats.groupby(level=['MatchId', 'num_map', 'Map', 'map_type', 'Team', 'Player', 'Hero']).first().fillna(0, inplace=True)
             dx = df_stats.groupby(level=['MatchId', 'num_map', 'Map', 'map_type', 'Section', 'RoundName', 'Team', 'Player', 'Hero']).diff()
             dx = dx.fillna(0)
             # dt = dx.reset_index('Timestamp').groupby(level=['MatchId', 'num_map', 'Map', 'map_type', 'Section', 'RoundName', 'Team', 'Player', 'Hero'])['Timestamp'].diff().dt.total_seconds().values
@@ -266,7 +264,12 @@ class MatchLog():
             # dxdt_merge = pd.merge(dx, dxdt, how='outer', left_index=True, right_index=True)
 
             # df_merge = pd.merge(df_input, dxdt_merge, how='left', left_index=True, right_index=True, suffixes=('', '/s'))
+            
             df_merge = pd.merge(df_input, dx, how='left', left_index=True, right_index=True, suffixes=('', '/s'))
+
+            # Calibrate stats cumulated by player (HealingReceived 스탯이 영웅별로 누적되는 것처럼 GUID에 나오지만 실제론 선수별로 누적됨. 그래서 TimePlayed=0인 영웅 부분을 0으로 치환해줌.)
+            statlist_cumulated_by_player = ['HealingReceived/s']
+            df_merge.loc[df_merge['TimePlayed/s']==0, statlist_cumulated_by_player] = 0
 
             return df_merge
         
