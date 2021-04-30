@@ -60,3 +60,12 @@ NYXLDB_ESD_Kill = {
     'charset' : "utf8",
     'port' : 3306
 }
+
+NYXLDB_ESD_PETH = {
+    'hostname' : "localhost",
+    'username' : "root",
+    'pwd' : "gpdlzjadh",
+    'dbname' : "esd_peth",
+    'charset' : "utf8",
+    'port' : 3306
+}

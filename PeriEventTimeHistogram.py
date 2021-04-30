@@ -4,6 +4,7 @@ import glob
 import os 
 from StatAbbr import *
 from MySQLConnection import *
+import mysql_auth
 
 class PETH():
     def __init__(self, FinalStatName=None):
@@ -20,7 +21,7 @@ class PETH():
 
     def set_df_init(self):
         if self.import_type == 'sql': # import FinalStat from sql
-            self.df_init = MySQLConnection(dbname='scrim_finalstat').read_table_as_df(self.FinalStatName)
+            self.df_init = MySQLConnection(login_info=mysql_auth.NYXLDB_ESD_FinalStat).read_table_as_df(self.FinalStatName)
         elif self.import_type == 'csv': # improt FinalStat from csv
             self.FinalStatCsvName = self.FinalStatName
             path_FinalStat = r'G:\공유 드라이브\NYXL Scrim Log\FinalStat'
@@ -67,10 +68,10 @@ class PETH():
 
                 # align FinalStat by event onset
                 event_onset = row['Timestamp']
-                df_event_recorder = self.df_init[(self.df_init['Timestamp'] >= (event_onset - (self.period + 1))) & (self.df_init['Timestamp'] <= (event_onset + (self.period + 1)))]
+                df_event_recorder = self.df_init[(self.df_init['Timestamp'] >= (event_onset - pd.Timedelta(self.period + 1, unit='S'))) & (self.df_init['Timestamp'] <= (event_onset + pd.Timedelta(self.period + 1, unit='S')))]
                 df_event_recorder = df_event_recorder.copy() # make a copy to avoid SettingWithCopyWarning
                 df_event_recorder['Timestamp'] -= event_onset
-                df_event_recorder['Timestamp'] = df_event_recorder['Timestamp'].astype(int) # Timestamp 소숫점 자리 버림
+                df_event_recorder['Timestamp'] = df_event_recorder['Timestamp'].dt.total_seconds() # / 10**9 #.astype(int) # Timestamp 소숫점 자리 버림
                 
                 # reference columns
                 df_event_recorder['ref_Team'] = ref_team_name
@@ -126,10 +127,10 @@ class PETH():
 
         f.close()
     
-    def update_PETH_to_sql(self):
+    def update_PETH_to_sql(self, if_exists='fail'):
 
         def get_filelist_all(): 
-            filelist_FinalStat = MySQLConnection(dbname='scrim_finalstat').get_table_names()
+            filelist_FinalStat = MySQLConnection(login_info=mysql_auth.NYXLDB_ESD_FinalStat).get_table_names()
             peth_tag = self.stat_name_abbr.lower() # sql table 과 통일 위해 소문자 변환
             filelist_PETH = [x + f'_{peth_tag}' for x in filelist_FinalStat]
             filelist_PETH = filelist_PETH
@@ -137,15 +138,19 @@ class PETH():
             return filelist_PETH
             
         def get_filelist_updated():
-            tablelist_peth = MySQLConnection(dbname='scrim_peth').get_table_names()
+            tablelist_peth = MySQLConnection(login_info=mysql_auth.NYXLDB_ESD_PETH).get_table_names()
             peth_tag = self.stat_name_abbr.lower() # sql table 과 통일 위해 소문자 변환
 
             filelist_updated = [x for x in tablelist_peth if x.endswith(f'_{peth_tag}')]
 
             return filelist_updated
 
-        filelist_FinalStat = get_filelist_all() # all filelist
-        filelist_updated = get_filelist_updated() # updated filelist
+        if if_exists=='replace':
+            filelist_FinalStat = get_filelist_all() # all filelist
+            filelist_updated = []
+        else:
+            filelist_FinalStat = get_filelist_all() # all filelist
+            filelist_updated = get_filelist_updated() # updated filelist
 
         # sort files to be updated
         filelist_to_update = list(set(filelist_FinalStat) - set(filelist_updated))
@@ -169,8 +174,8 @@ class PETH():
             file_PETH.set_import_type('sql')
             file_PETH.set_search_condition(event_name=self.event_name, threshold=self.threshold)
             input_PETH = file_PETH.get_PETH()
-            df_sql = MySQLConnection(input_df=input_PETH.reset_index(), dbname='scrim_peth') # reset_index to export to mysql db
+            df_sql = MySQLConnection(input_df=input_PETH.reset_index(), login_info=mysql_auth.NYXLDB_ESD_PETH) # reset_index to export to mysql db
             table_name = filename
-            df_sql.export_to_db(table_name=f'{table_name}_{file_PETH.stat_name_abbr}', if_exists='fail')
+            df_sql.export_to_db(table_name=f'{table_name}_{file_PETH.stat_name_abbr}', if_exists=if_exists)
 
             print(f'File Exported to {df_sql.dbname}: {filename}_{file_PETH.stat_name_abbr}')
